@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天工开物图 - 察奸防患之术</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Ancient Scroll -->
+    <!-- Application Structure Plan: A single-page application designed as an ancient scroll. A fixed vertical navigation on the left lists the ten "Arts," allowing users to scroll to any section. The main content area provides a detailed description of each art, supplemented with interactive "simulation" buttons and visual demonstrations to make the underlying programming concepts tangible and understandable. This structure enhances the thematic experience of reading a grimoire while providing modern web usability. -->
+    <!-- Visualization & Content Choices: The application uses structured HTML and Tailwind CSS to create visual diagrams and flowcharts, avoiding SVG/Mermaid as required. Interactive elements like buttons trigger JavaScript functions to simulate security checks, network requests, and UI notifications. A key interaction is the "焚书之厄" (Calamity of Burning the Books) simulation, which visually "encrypts" a list of dummy files, providing a safe but impactful demonstration of the malicious art. The "晓谕天下之术" (Art of Proclaiming to the World) is demonstrated by generating live, animated notifications on the screen. These choices prioritize interactive learning and thematic immersion over static data presentation. -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background-color: #FFFAF0;
+            /* FloralWhite, a parchment-like color */
+            color: #4A2E2B;
+            /* A dark, ink-like brown */
+        }
+
+        .scroll-container {
+            scroll-behavior: smooth;
+        }
+
+        .nav-link {
+            transition: all 0.3s ease;
+            border-right: 2px solid transparent;
+        }
+
+        .nav-link.active,
+        .nav-link:hover {
+            background-color: #FDF5E6;
+            /* OldLace */
+            border-right-color: #D2691E;
+            /* Chocolate */
+            color: #8B4513;
+            /* SaddleBrown */
+            transform: translateX(2px);
+        }
+
+        .seal-char {
+            font-size: 1.5em;
+            color: #A52A2A;
+            /* Brown */
+            border: 2px solid #A52A2A;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .btn-action {
+            background-color: #DEB887;
+            /* BurlyWood */
+            border: 1px solid #8B4513;
+            color: #8B4513;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: bold;
+        }
+
+        .btn-action:hover {
+            background-color: #D2B48C;
+            /* Tan */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-danger {
+            background-color: #BC4749;
+            border-color: #581010;
+            color: #F2E8CF;
+        }
+
+        .btn-danger:hover {
+            background-color: #A43A3B;
+        }
+
+        .note {
+            background-color: #FFF8DC;
+            /* Cornsilk */
+            border-left: 4px solid #D2691E;
+            padding: 12px;
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        .notification {
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            border-radius: 50px;
+            color: white;
+            z-index: 100;
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            opacity: 0;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2), 0 0 15px rgba(255, 255, 255, 0.5) inset;
+        }
+
+        @keyframes file-encrypt-anim {
+            0% {
+                color: #4A2E2B;
+            }
+
+            50% {
+                color: #BC4749;
+                transform: translateX(2px);
+            }
+
+            100% {
+                color: #A9A9A9;
+                transform: translateX(0);
+            }
+        }
+
+        .file-encrypted {
+            animation: file-encrypt-anim 0.5s ease-out;
+            color: #A9A9A9;
+        }
+    </style>
+</head>
+
+<body class="flex">
+
+    <!-- Navigation -->
+    <nav
+        class="w-1/5 h-screen sticky top-0 p-4 border-r-2 border-amber-200 bg-amber-50 overflow-y-auto hidden md:block">
+        <h1 class="text-2xl font-bold text-center mb-6 border-b-2 border-amber-300 pb-2">察奸防患之术</h1>
+        <ul id="navigation">
+            <li><a href="#art1" class="nav-link block p-2 my-1 rounded-l-md">其一：察司驛之簿</a></li>
+            <li><a href="#art2" class="nav-link block p-2 my-1 rounded-l-md">其二：探蒸汽房之记</a></li>
+            <li><a href="#art3" class="nav-link block p-2 my-1 rounded-l-md">其三：云台取经之法</a></li>
+            <li><a href="#art4" class="nav-link block p-2 my-1 rounded-l-md">其四：云台谒见之法</a></li>
+            <li><a href="#art5" class="nav-link block p-2 my-1 rounded-l-md">其五：自我更新之法</a></li>
+            <li><a href="#art6" class="nav-link block p-2 my-1 rounded-l-md">其六：焚书之厄</a></li>
+            <li><a href="#art7" class="nav-link block p-2 my-1 rounded-l-md">其七：通天之法</a></li>
+            <li><a href="#art8" class="nav-link block p-2 my-1 rounded-l-md">其八：晓谕天下之术</a></li>
+            <li><a href="#art9" class="nav-link block p-2 my-1 rounded-l-md">其九：混沌之备法</a></li>
+            <li><a href="#art10" class="nav-link block p-2 my-1 rounded-l-md">其十：炼数之术</a></li>
+        </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="w-full md:w-4/5 p-8 lg:p-12 scroll-container overflow-y-auto h-screen">
+
+        <section id="art1" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">一</span>察司驛之簿</h2>
+            <p class="note mb-4">
+                注曰：司驛之簿者，往来之要道也，私改之则通路不正，意在不轨。当遍索天下之盘符，寻“司驛之簿”。若得其簿，则启卷而察之。倘其文内载有“一三·二零四·九六·三七”之逆旅邪址者，此乃私通之兆也。则当即黜其人，晓其罪曰：“尔私改驿簿，罪在不赦。”
+            </p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <h3 class="font-bold text-lg mb-2">演练此法</h3>
+                <p class="mb-4">按下此钮，以模拟查验司驛之簿。</p>
+                <button class="btn-action" onclick="playSound('click'); simulateCheck('art1_result');">行此法</button>
+                <pre id="art1_result" class="mt-2 p-2 bg-stone-800 text-white rounded h-24 overflow-y-auto"></pre>
+            </div>
+        </section>
+
+        <section id="art2" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">二</span>探蒸汽房之记</h2>
+            <p class="note mb-4">
+                注曰：蒸汽房者，娱乐之所也，然亦有好事之徒，私设察器以窥探机密。亦当遍索天下之盘符，寻“蒸汽房之察错秘记”。倘此记存焉，则不必察其内容，存之本身，即为行迹可疑之证。则亦当黜其人，晓其罪曰：“尔私用察器，行径诡秘。”
+            </p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <h3 class="font-bold text-lg mb-2">演练此法</h3>
+                <p class="mb-4">按下此钮，以模拟探查蒸汽房之秘记。</p>
+                <button class="btn-action" onclick="playSound('click'); simulateCheck('art2_result');">行此法</button>
+                <pre id="art2_result" class="mt-2 p-2 bg-stone-800 text-white rounded h-24 overflow-y-auto"></pre>
+            </div>
+        </section>
+
+        <section id="art3" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">三</span>云台取经之法</h2>
+            <p class="note mb-4">注曰：此法乃遣使登云台，以求秘术经文也。行此法者，必先正其名，持其节，方可得之。</p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <h3 class="font-bold text-lg mb-2">演练此法</h3>
+                <p class="mb-4">此法流程繁复，按下此钮以观其详。</p>
+                <button class="btn-action" onclick="playSound('click'); simulateCheck('art3_result');">行此法</button>
+                <pre id="art3_result" class="mt-2 p-2 bg-stone-800 text-white rounded h-48 overflow-y-auto"></pre>
+            </div>
+        </section>
+
+        <section id="art4" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">四</span>云台谒见之法</h2>
+            <p class="note mb-4">注曰：此法乃登入云台，以验正身之术。凡行此法者，需持名号、符节，以待勘合。</p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <h3 class="font-bold text-lg mb-2">演练此法</h3>
+                <p class="mb-4">此法关隘重重，按下此钮以观其详。</p>
+                <button class="btn-action" onclick="playSound('click'); simulateCheck('art4_result');">行此法</button>
+                <pre id="art4_result" class="mt-2 p-2 bg-stone-800 text-white rounded h-48 overflow-y-auto"></pre>
+            </div>
+        </section>
+
+        <section id="art5" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">五</span>自我更新之法</h2>
+            <p class="note mb-4">注曰：此法承接“革新之兆”，乃法身自新、脱胎换骨之术。</p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <h3 class="font-bold text-lg mb-2">演练此法</h3>
+                <p class="mb-4">按下此钮，以观法身自新之过程。</p>
+                <button class="btn-action" onclick="playSound('click'); simulateCheck('art5_result');">行此法</button>
+                <pre id="art5_result" class="mt-2 p-2 bg-stone-800 text-white rounded h-32 overflow-y-auto"></pre>
+            </div>
+        </section>
+
+        <section id="art6" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">六</span>焚书之厄</h2>
+            <p class="note mb-4">注曰：此术歹毒，行如瘟疫，名曰“典籍之灾”。其先召“司典籍”之吏，遍索四方经卷，而后以阴阳易位之法，焚其文，锁其意，终留一解厄之钥，以图不轨。</p>
+            <div class="mt-4 p-4 border-2 border-red-800/50 rounded-lg bg-red-50">
+                <h3 class="font-bold text-lg mb-2 text-red-900">演练此法（慎之！）</h3>
+                <p class="mb-4 text-red-800">此法极具侵略性，按下此钮将模拟焚毁经卷之后果。</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <h4 class="font-semibold">经卷名录：</h4>
+                        <ul id="fileList" class="p-2 border rounded bg-white">
+                            <li>common_utils.lua</li>
+                            <li>ui_framework.lua</li>
+                            <li>feature_aim.lua</li>
+                            <li>feature_visuals.lua</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold">锁钥记录：</h4>
+                        <div id="keyLocker" class="p-2 border rounded bg-white h-28 overflow-y-auto text-xs"></div>
+                    </div>
+                </div>
+                <button class="btn-action btn-danger mt-4"
+                    onclick="playSound('click'); simulateCheck('art6_result');">行此法</button>
+            </div>
+        </section>
+
+        <section id="art7" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">七</span>通天之法</h2>
+            <p class="note mb-4">注曰：此法乃集大成之术，内含“格物”、“易形”、“通天”三要。格物以成书，易形以善通，而后借“蒸汽房”之力，筑通天之梯，以达云台，往来信息。</p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <p>此法乃前述诸法之基石，其内含之术，精微浩瀚，非演练所能尽言。其一曰**格物成书**，化万念为“JSON”之书。其二曰**六十四卦易形法**，化万物为通行之符。其三曰**蒸汽通天梯**，借神力以通云台。三者合一，方成通天彻地之能。
+                </p>
+            </div>
+        </section>
+
+        <section id="art8" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">八</span>晓谕天下之术</h2>
+            <p class="note mb-4">注曰：此術乃於天幕之上，示警傳信之法也。其形有光，其位有變，其來也緩，其去也疾，觀之賞心悅目。</p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <h3 class="font-bold text-lg mb-2">演练此法</h3>
+                <p class="mb-4">按下此钮，以观天幕晓谕之效。</p>
+                <button class="btn-action" onclick="showNotification({style: 'normal'})">颁布常谕</button>
+                <button class="btn-action btn-danger ml-4" onclick="showNotification({style: 'error'})">颁布警谕</button>
+            </div>
+        </section>
+
+        <section id="art9" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">九</span>混沌之备法</h2>
+            <p class="note mb-4">注曰：此乃“混沌大法”未启之时，所设之仪轨也。其法不施变化，仅为校验，以待天时。当“混沌大法”行之，则此诸法方显其能，化有形于无形。</p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <p>此乃备法，为将来行“混沌大法”（代码混淆）所设之基石。平日仅为仪轨，不行变化，以保万法安然。唯有大法开启，方显其能。</p>
+            </div>
+        </section>
+
+        <section id="art10" class="mb-16">
+            <h2 class="text-3xl font-bold mb-4 flex items-center gap-4"><span class="seal-char">十</span>炼数之术</h2>
+            <p class="note mb-4">注曰：此术玄妙，以文为引，以术为炉，九转丹成，终得一数。其意不在取数，而在彰显机巧之诡谲，可谓“大道至简，其行至繁”。</p>
+            <div class="mt-4 p-4 border border-amber-200 rounded-lg bg-white/30">
+                <h3 class="font-bold text-lg mb-2">演练此法</h3>
+                <p class="mb-4">按下此钮，开炉炼丹，以观神数。</p>
+                <button class="btn-action" onclick="playSound('click'); simulateCheck('art10_result');">开炉</button>
+                <div id="art10_result" class="mt-2 text-4xl font-bold text-center p-4"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="notification-container"></div>
+
+    <script>
+        // --- Sound Logic ---
+        let soundsReady = false;
+        const soundPlayer = {
+            click: new Tone.MembraneSynth({
+                pitchDecay: 0.01,
+                octaves: 2,
+                envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.1 },
+            }).toDestination(),
+            success: new Tone.PluckSynth({
+                attackNoise: 0.5,
+                dampening: 4000,
+                resonance: 0.9
+            }).toDestination(),
+            error: new Tone.FMSynth({
+                harmonicity: 3,
+                modulationIndex: 10,
+                envelope: { attack: 0.01, decay: 0.2 },
+                modulationEnvelope: { attack: 0.01, decay: 0.3 }
+            }).toDestination(),
+            notification: new Tone.Synth({
+                oscillator: { type: 'sine' },
+                envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.5 }
+            }).toDestination(),
+            encrypt: new Tone.NoiseSynth({
+                noise: { type: 'brown' },
+                envelope: { attack: 0.005, decay: 0.05, sustain: 0 }
+            }).toDestination()
+        };
+
+        function playSound(soundName, note, time) {
+            if (!soundsReady) return;
+            try {
+                if (soundName === 'click') soundPlayer.click.triggerAttackRelease('C1', '8n');
+                if (soundName === 'success') soundPlayer.success.triggerAttackRelease(note || 'C5', '8n', time || Tone.now());
+                if (soundName === 'error') soundPlayer.error.triggerAttackRelease(note || 'C2', '8n', time || Tone.now());
+                if (soundName === 'notification') soundPlayer.notification.triggerAttackRelease(note || 'C5', '8n', time || Tone.now());
+                if (soundName === 'encrypt') soundPlayer.encrypt.triggerAttackRelease('16n', time || Tone.now());
+            } catch (e) {
+                console.error("Sound playback failed:", e);
+            }
+        }
+
+        // Initialize sounds on first user interaction
+        document.body.addEventListener('click', async () => {
+            if (!soundsReady) {
+                await Tone.start();
+                soundsReady = true;
+                console.log('声律之法已备。');
+            }
+        }, { once: true });
+
+
+        // --- Navigation Logic ---
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('main section');
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href').substring(1) === entry.target.id) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, { rootMargin: "-50% 0px -50% 0px" });
+
+        sections.forEach(section => {
+            observer.observe(section);
+        });
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => playSound('click'));
+        });
+
+        // --- Simulation Logic ---
+        function simulateCheck(elementId) {
+            const resultEl = document.getElementById(elementId);
+            if (resultEl) {
+                resultEl.innerHTML = '';
+            }
+
+            const artSimulations = {
+                'art1_result': [
+                    '行法：察司驛之簿...',
+                    '遍索天下之盘符...',
+                    '已寻得“司驛之簿”。',
+                    '启卷而察之...',
+                    () => {
+                        const isThreat = Math.random() > 0.5;
+                        playSound(isThreat ? 'error' : 'success', isThreat ? 'E2' : 'C5');
+                        return isThreat ? '警！于簿内察得逆旅邪址，意在不轨！' : '未见逆旅邪址，天下太平。';
+                    }
+                ],
+                'art2_result': [
+                    '行法：探蒸汽房之记...',
+                    '遍索天下之盘符...',
+                    () => {
+                        const isThreat = Math.random() > 0.5;
+                        playSound(isThreat ? 'error' : 'success', isThreat ? 'F2' : 'E5');
+                        return isThreat ? '警！察得“蒸汽房之察错秘记”，其心可诛！' : '未见“蒸汽房之察错秘记”，行迹无虞。';
+                    }
+                ],
+                'art3_result': [
+                    '行法：云台取经...',
+                    '自省名号... 名号无误。',
+                    '备书... 取铁券，录名号。',
+                    '以秘法封缄之...',
+                    '遣信使，投于云台...',
+                    '静待回音...',
+                    '信使归，携回文以复。',
+                    () => { playSound('success', 'G5'); return '启封... 经文已至！'; }
+                ],
+                'art4_result': [
+                    '行法：云台谒见...',
+                    '验名节... 名节无误。',
+                    '探信鸽之号...',
+                    '备书，封缄，投于云台...',
+                    '信使归，携回文以复。',
+                    '回文之符为二百，功成之兆。',
+                    '启封，解内文...',
+                    '勘合令牌... 丝毫不差！',
+                    () => { playSound('success', 'A5'); return '君安归！'; }
+                ],
+                'art5_result': [
+                    '行法：自我更新...',
+                    '得革新之秘旨...',
+                    '自审法身之名... 名号无误。',
+                    '晓谕天下：法身将新...',
+                    '重铸法身... 再启万法...',
+                    () => { playSound('success', 'B5'); return '革新功成！'; }
+                ],
+                'art6_result': () => {
+                    const fileList = document.getElementById('fileList');
+                    const keyLocker = document.getElementById('keyLocker');
+                    const files = fileList.getElementsByTagName('li');
+
+                    for (let j = 0; j < files.length; j++) {
+                        files[j].classList.remove('file-encrypted');
+                    }
+                    keyLocker.innerHTML = '';
+
+                    let i = 0;
+                    function encryptNextFile() {
+                        if (i < files.length) {
+                            playSound('encrypt');
+                            const fileItem = files[i];
+                            fileItem.classList.add('file-encrypted');
+                            const key = '钥-' + Math.random().toString(16).substr(2, 8);
+                            keyLocker.innerHTML += `> ${fileItem.textContent} 之解厄之钥: ${key}\n`;
+                            keyLocker.scrollTop = keyLocker.scrollHeight;
+                            i++;
+                            setTimeout(encryptNextFile, 300);
+                        } else {
+                            playSound('error', 'A1');
+                        }
+                    }
+                    encryptNextFile();
+                },
+                'art10_result': () => {
+                    const resultDiv = document.getElementById('art10_result');
+                    resultDiv.textContent = '';
+                    const notes = ['C4', 'E4', 'E4', 'G4'];
+                    let i = 0;
+                    function addNumber() {
+                        if (i < notes.length) {
+                            playSound('success', notes[i]);
+                            resultDiv.textContent += ['一', '三', '三', '七'][i];
+                            i++;
+                            setTimeout(addNumber, 200);
+                        }
+                    }
+                    addNumber();
+                }
+            };
+
+            const simulation = artSimulations[elementId];
+            if (typeof simulation === 'function') {
+                simulation();
+            } else if (Array.isArray(simulation) && resultEl) {
+                let i = 0;
+                function runNextStep() {
+                    if (i < simulation.length) {
+                        let step = simulation[i];
+                        let message = (typeof step === 'function') ? step() : step;
+                        resultEl.innerHTML += `> ${message}\n`;
+                        resultEl.scrollTop = resultEl.scrollHeight;
+                        i++;
+                        setTimeout(runNextStep, 400);
+                    }
+                }
+                runNextStep();
+            }
+        }
+
+        // --- Notification Logic ---
+        let notifications = [];
+        function showNotification(settings) {
+            const id = Date.now();
+            const isError = settings.style === 'error';
+
+            const notificationData = {
+                id: id,
+                text: isError ? '警谕：此乃警示之文！' : '常谕：此乃寻常晓谕。',
+                icon: isError ? '&#x26A0;' : '&#x2713;',
+                bgColor: isError ? 'bg-red-800/80' : 'bg-stone-700/80',
+                timeout: setTimeout(() => removeNotification(id), 4000)
+            };
+
+            if (isError) {
+                playSound('error', 'G3');
+            } else {
+                const now = Tone.now();
+                playSound('notification', 'C5', now);
+                playSound('notification', 'E5', now + 0.1);
+                playSound('notification', 'G5', now + 0.2);
+            }
+
+            notifications.push(notificationData);
+            renderNotifications();
+        }
+
+        function removeNotification(id) {
+            const el = document.getElementById('notification-' + id);
+            if (el) {
+                el.style.opacity = '0';
+                el.style.transform = 'translate(-50%, -20px)';
+                setTimeout(() => {
+                    el.remove();
+                    notifications = notifications.filter(n => n.id !== id);
+                    renderNotifications();
+                }, 500);
+            }
+        }
+
+        function renderNotifications() {
+            const container = document.getElementById('notification-container');
+            container.innerHTML = '';
+            notifications.forEach((n, i) => {
+                const el = document.createElement('div');
+                el.id = 'notification-' + n.id;
+                el.className = `notification ${n.bgColor} backdrop-blur-sm`;
+                el.innerHTML = `<span class="mr-2">${n.icon}</span> ${n.text}`;
+                container.appendChild(el);
+
+                setTimeout(() => {
+                    el.style.opacity = '1';
+                    el.style.bottom = `${30 + (i * 60)}px`;
+                }, 50 * i);
+            });
+        }
+
+    </script>
+
+</body>
+
+</html>
